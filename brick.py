@@ -10,7 +10,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Load the background image
-background = pygame.image.load('test/asset/—Pngtree—transparent ground gaming background free_8679518.png')
+background = pygame.image.load('terrain.png')
 background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Colors

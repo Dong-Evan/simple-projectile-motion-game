@@ -18,12 +18,12 @@ BLUE = (0, 0, 255)
 COLORS = [RED, GREEN, BLUE, WHITE]  # List of colors for the bricks
 
 # Game elements
-BRICK_WIDTH, BRICK_HEIGHT = 60, 30
+BRICK_WIDTH, BRICK_HEIGHT = 10, 10
 PADDLE_WIDTH, PADDLE_HEIGHT = 100, 20
 BALL_RADIUS = 10
-NUM_ROWS = 5  # Number of rows of bricks
-NUM_COLS = 13  # Number of columns of bricks
-BRICK_PADDING = 10
+NUM_ROWS = 20  # Number of rows of bricks
+NUM_COLS = 80  # Number of columns of bricks
+BRICK_PADDING = 0
 
 # Frames per second
 FPS = 60
@@ -71,13 +71,65 @@ class Ball:
     def draw(self):
         pygame.draw.circle(screen, self.color, self.rect.center, BALL_RADIUS)
 
-NUM_BRICKS = 10 # Total number of bricks to place
+NUM_BRICKS = 200 # Total number of bricks to place
 
 def create_bricks():
     bricks = []
     occupied_positions = set()
 
-    while len(bricks) < NUM_BRICKS:
+    for i in range(50):
+        col = random.randint(5, 15)
+        row = random.randint(10, 20)
+        position = (row, col)
+
+        # Check if the position is already occupied
+        if position not in occupied_positions:
+            occupied_positions.add(position)
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
+            color = RED  # Keeping a single color for simplicity, can be randomized
+            bricks.append(Brick(x, y, color))
+
+    for i in range(50):
+        col = random.randint(30, 40)
+        row = random.randint(0, 20)
+        position = (row, col)
+
+        # Check if the position is already occupied
+        if position not in occupied_positions:
+            occupied_positions.add(position)
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
+            color = RED  # Keeping a single color for simplicity, can be randomized
+            bricks.append(Brick(x, y, color))
+
+    for i in range(80):
+        col = random.randint(50, 65)
+        row = random.randint(5, 20)
+        position = (row, col)
+
+        # Check if the position is already occupied
+        if position not in occupied_positions:
+            occupied_positions.add(position)
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
+            color = RED  # Keeping a single color for simplicity, can be randomized
+            bricks.append(Brick(x, y, color))
+
+    for i in range(80):
+        col = random.randint(70, 80)
+        row = random.randint(20, 30)
+        position = (row, col)
+
+        # Check if the position is already occupied
+        if position not in occupied_positions:
+            occupied_positions.add(position)
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
+            color = RED  # Keeping a single color for simplicity, can be randomized
+            bricks.append(Brick(x, y, color))
+
+    for i in range(50):
         col = random.randint(0, NUM_COLS - 1)
         row = random.randint(0, NUM_ROWS - 1)
         position = (row, col)
@@ -85,8 +137,21 @@ def create_bricks():
         # Check if the position is already occupied
         if position not in occupied_positions:
             occupied_positions.add(position)
-            x = col * (BRICK_WIDTH + BRICK_PADDING) + BRICK_PADDING
-            y = row * (BRICK_HEIGHT + BRICK_PADDING) + 50  # Start 50 pixels down from the top
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
+            color = RED  # Keeping a single color for simplicity, can be randomized
+            bricks.append(Brick(x, y, color))
+
+    for i in range(150):
+        col = random.randint(25, NUM_COLS - 25)
+        row = random.randint(20, NUM_ROWS + 20)
+        position = (row, col)
+
+        # Check if the position is already occupied
+        if position not in occupied_positions:
+            occupied_positions.add(position)
+            x = col * BRICK_WIDTH 
+            y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
             bricks.append(Brick(x, y, color))
 
@@ -102,19 +167,39 @@ ball = Ball(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
 # Main game loop
 running = True
+
+paused = True
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
+    event = pygame.event.poll()
+
     keys = pygame.key.get_pressed()
+
+    # if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+    #     paused = True
+    #     continue
+    # elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+    #     paused = False
+    #     print("unpause")
+    #     continue
+
+    if keys[pygame.K_p]:
+        paused = True
+    elif keys[pygame.K_r]:
+        paused = False
+
+    if not paused:
+        # Update ball position
+        ball.move()
+
     if keys[pygame.K_LEFT]:
         paddle.move("left")
     if keys[pygame.K_RIGHT]:
         paddle.move("right")
-
-    # Update ball position
-    ball.move()
 
     # Check for ball collision with paddle
     if ball.rect.colliderect(paddle.rect):
