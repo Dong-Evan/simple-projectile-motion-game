@@ -4,6 +4,7 @@ import pygame, sys
 import numpy as np
 from scipy.integrate import ode
 import bullet
+import tank
 
 # set up the colors
 BLACK = (0, 0, 0)
@@ -62,15 +63,22 @@ def main():
 
     #set up terrain (start with simple flat floor)
 
+    #set up obstacles (bricks to block bullets)
+
+
     #set up a sprite group which will be drawn on the screen
         #essentially every object that will be drawn should be stored here
     #...sike this bad (?) just call the object's draw method for each object that needs to be drawn, or instead of creating a sprite group, create an objects list and loop through that to call each object's draw
-    spriteGroup = pygame.sprite.Group()
-    #create tank for p1
-    #tank1 = 
-    #create tank for p2
-    #tank2 = 
+    # spriteGroup = pygame.sprite.Group()
 
+    #create tank for p1
+    tank1 = tank.Tank()
+    #create tank for p2
+    tank2 = tank.Tank()
+
+    # shotBullet = bullet.Firework(RED, 10, 10) 
+
+    tanks = [tank1, tank2]
 
     #not sure how to add bullets right now (since they have to be created and deleted)
     #one option is to to create these sprites (circles) and then update their
@@ -80,23 +88,21 @@ def main():
     # shell = bullet.Shell(RED, 10, 10) 
     # shell.setup(0.0, 400.0, 70.0, 25.0)
 
-    shell = bullet.Firework(RED, 10, 10) 
-    shell.setup(0.0, 400.0, 70.0, 25.0, 3)
-    
-    # spriteGroup.add(shell)
-
     # sim = bullet.ReflectingBullet()
 
     # sim.setup(0.0, 400.0, 70.0, 25.0, 3)  #will probably need to set up the position and velocity of the bullets differently
-    #...
 
-    # print('--------------------------------')
-    # print('Usage:')
-    # print('Press (r) to start/resume simulation')
-    # print('Press (p) to pause simulation')
-    # print('Press (space) to step forward simulation when paused')
-    # print('--------------------------------')
+    print('--------------------------------')
+    print('Use A & D to move')
+    print('Use W & D to change shot power')
+    print('Use Q & E to change shot direction')
+    print('Press R to cycle through avaiable bullets')
+    print('Press Space to shoot')
+    print('Press P to pause and K to resume')
+    print('Press L to step forward in game when paused')
+    print('--------------------------------')
 
+    '''
     #main loop of the game (infinite loop while both tanks are alive)
         #basic rundown: 
             #determine who has control (who's turn it is), 
@@ -110,52 +116,98 @@ def main():
                 #update things accordingly; break bullets, break blocks/terrain, damage tanks
             #check hp of tanks, if one is 0, other wins
             #draw everything (spriteGroup (tank, bullet), terrain, hp, aim trajectory arrow, numbers (power (and angle) of shot))
-    
+    '''
+
+    paused = True
+
     while True:
         # 30 fps (this is from lab... not sure what to do with it)
         clock.tick(30)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit(0)
 
         #int control variable that determines who is currently in control (since we want turn based)
             #start with letting p1 have control
             #i.e. pressing keys will affect tank1
         control = 0
+        currentTank = tanks[control] #get the tank corresponding to current control from list of tanks
 
-        event = pygame.event.poll()
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit(0)
+        #get key presses
+        keys = pygame.key.get_pressed()
 
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-            shell.pause()
-            continue
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-            shell.resume()
-            continue
-        else:
-            pass
-
-        #temporary ...
-        # update sprite x, y position using values
-        # returned from the simulation
-        # my_sprite.rect.x, my_sprite.rect.y =  sim.state[0], sim.state[1]
-        # print(sim.state[:2])
-        #...
-
-        #display procedure (re-draw everything)
-            #clear the background, and draw the sprites 
+        #controls for pausing and resuming the game
+        if keys[pygame.K_p]:
+            paused = True
+        elif keys[pygame.K_k]:
+            paused = False
+        
+        #clear the background (to re-draw the sprites) 
         screen.fill(WHITE)
-        # spriteGroup.update()
-        # spriteGroup.draw(screen)
 
-        #updating the simulation
-            #want 
-        if not shell.paused:
-            shell.step()
-        else:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                shell.step()
+        if not paused:
 
-        shell.draw(screen)
+            # #check for tank controls (need to implement these properly after tank class is done)
+            if keys[pygame.K_a]:
+                print('left')
+                # currentTank.move(-1)
+            elif keys[pygame.K_d]:
+                print('right')
+                # currentTank.move(1)
+
+            #controls for changing shot power of bullet(s) (could either pass a number to method or have no parameter and just have a fixed number in the method itself)
+                #*make sure power is between 10 to 100 (10 might be too high? definitely don't want 0)
+            if keys[pygame.K_w]:
+                print('increase shot power')
+                #currentTank.increasePower(1)
+            elif keys[pygame.K_s]:
+                print('decrease shot power')
+                #currentTank.decreasePower(1)
+
+            #controls for aiming tank barrel / bullet (change 1 degree at a time?)
+                #*make sure angle is between 0 to 180 (the upper side of the tank)
+            if keys[pygame.K_q]:
+                print('shift aim left')
+                #currentTank.shiftAimAngle(-1)
+            elif keys[pygame.K_e]:
+                print('shift aim right')
+                #currentTank.shiftAimAngle(1)
+
+            #control for cycling bullet type 
+            if keys[pygame.K_r]:
+                print('cycle bullet')
+                #currentTank.nextBullet()
+
+            if keys[pygame.K_SPACE]:
+                print('shoot')
+                #shotBullet = currentTank.shoot() #this will simply remove the selected bullet from the tank's bullet list and return it
+                shotBullet = bullet.Firework(RED, 10, 10) 
+                shotBullet.setup(0.0, 400.0, 40.0, 45.0, 5) #setup should use the tank's aim power and angle (maybe have the setup in tank and return fully setup bullet from tank.shoot())
+                print(len(shotBullet.shells))
+                #while the bullet is still 'alive', only update the bullet and don't let anything else have control
+                while len(shotBullet.shells) > 0:
+                    clock.tick(30)
+                    screen.fill(WHITE)
+                    #draw everything
+
+                    shotBullet.step()
+                    shotBullet.draw(screen)
+                    
+                    pygame.display.flip()
+
+                if control == 0:
+                    control = 1 
+                else:
+                    control = 0
+
+            #display procedure (re-draw everything)
+
+            # if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                # shell.step()
+
+        
         pygame.display.flip()
 
     # print("r: %10.2f" % sim.trace_x[-1])

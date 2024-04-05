@@ -175,7 +175,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    event = pygame.event.poll()
+    # event = pygame.event.poll()
 
     keys = pygame.key.get_pressed()
 
