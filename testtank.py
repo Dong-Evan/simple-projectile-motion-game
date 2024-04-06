@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 import random
+import bullet
 
 # Initialize Pygame
 pygame.init()
@@ -55,11 +56,12 @@ class Tank:
         self.color = color
         self.hp = 100
         self.fuel = 100
-        self.aimSpeed = 10
+        self.aimSpeed = 100
         self.aimAngle = 45
         self.bullets = []
         self.orientation = orientation
         self.aimDirection = 1 if orientation == 'right' else -1
+        self.tempDirection = 0 if orientation == 'right' else 90
 
     def move(self, direction):
         # Restrict tank movement within screen boundaries
@@ -69,7 +71,13 @@ class Tank:
         angle_rad = np.radians(self.aimAngle)
         speed_x = self.aimSpeed * np.cos(angle_rad) * self.aimDirection
         speed_y = -self.aimSpeed * np.sin(angle_rad)
-        self.bullets.append(Shell(self.x + tnk_width // 2, self.y, speed_x, speed_y, self.color))
+        newBullet = bullet.Shell()
+        if self.aimDirection == -1:
+            aimAngle = 180 - self.aimAngle
+        else: 
+            aimAngle = self.aimAngle
+        newBullet.setup(self.x + tnk_width // 2, self.y, self.aimSpeed, aimAngle)
+        self.bullets.append(newBullet)
 
     def draw(self):
         pygame.draw.rect(game_layout_display, self.color, (self.x, self.y, tnk_width, tnk_height))
@@ -78,9 +86,10 @@ class Tank:
         pygame.draw.line(game_layout_display, self.color, (self.x + tnk_width / 2, self.y), (turret_end_x, turret_end_y), tur_width)
 
     def update_bullets(self):
-        for bullet in self.bullets[:]:
-            bullet.update()
-            if bullet.y < 0 or bullet.x < 0 or bullet.x > display_width:
+        for bullet in self.bullets:
+            bullet.step()
+            bullet.draw(game_layout_display)
+            if bullet.state[1] < 0 or bullet.state[0] < 0 or bullet.state[0] > display_width:
                 self.bullets.remove(bullet)
 
 def game_loop():
