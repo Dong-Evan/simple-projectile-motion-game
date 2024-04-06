@@ -56,7 +56,7 @@ class Tank:
         self.color = color
         self.hp = 100
         self.fuel = 100
-        self.aimSpeed = 100
+        self.aimSpeed = 50
         self.aimAngle = 45
         self.bullets = []
         self.orientation = orientation
@@ -71,13 +71,10 @@ class Tank:
         angle_rad = np.radians(self.aimAngle)
         speed_x = self.aimSpeed * np.cos(angle_rad) * self.aimDirection
         speed_y = -self.aimSpeed * np.sin(angle_rad)
-        newBullet = bullet.Shell()
-        if self.aimDirection == -1:
-            aimAngle = 180 - self.aimAngle
-        else: 
-            aimAngle = self.aimAngle
-        newBullet.setup(self.x + tnk_width // 2, self.y, self.aimSpeed, aimAngle)
+        # Instantiate the Shell object with the correct parameters
+        newBullet = Shell(self.x + tnk_width // 2, self.y, speed_x, speed_y, self.color)
         self.bullets.append(newBullet)
+
 
     def draw(self):
         pygame.draw.rect(game_layout_display, self.color, (self.x, self.y, tnk_width, tnk_height))
@@ -118,6 +115,10 @@ def game_loop():
                     elif event.key == pygame.K_SPACE: # Fire
                         player1.shoot()
                         player1_turn = False # Switch turn to Player 2
+                    elif event.key == pygame.K_LEFTBRACKET: # Decrease speed
+                        player1.aimSpeed = max(player1.aimSpeed - 10, 10)
+                    elif event.key == pygame.K_RIGHTBRACKET: # Increase speed
+                        player1.aimSpeed = min(player1.aimSpeed + 10, 100)
             else:  # Player 2 controls
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
@@ -131,8 +132,33 @@ def game_loop():
                     elif event.key == pygame.K_RETURN: # Fire (Return key for Player 2)
                         player2.shoot()
                         player1_turn = True # Switch turn back to Player 1
+                    elif event.key == pygame.K_COMMA: # Decrease speed
+                        player2.aimSpeed = max(player2.aimSpeed - 10, 10)
+                    elif event.key == pygame.K_PERIOD: # Increase speed
+                        player2.aimSpeed = min(player2.aimSpeed + 10, 100)
                 
         game_layout_display.fill(WHITE)
+
+        # Draw power and angle bars for Player 1
+        power_range = 90  # Range of values for the speed
+        power_value_p1 = max(min(player1.aimSpeed, power_range), 10)  # Ensure power value is within range
+        power_bar_length_p1 = int((power_value_p1 - 10) / power_range * 400)  # Calculate length of power bar
+        angle_bar_length_p1 = player1.aimAngle  # Angle bar length
+        pygame.draw.rect(game_layout_display, BLUE, (10, 10, power_bar_length_p1, 20))  # Power bar for Player 1
+        pygame.draw.rect(game_layout_display, RED, (10, 40, angle_bar_length_p1 * 4, 20))  # Angle bar for Player 1
+        # Draw angle value for Player 1
+        angle_text_p1 = small_font.render(str(player1.aimAngle) + " degrees", True, BLACK)
+        game_layout_display.blit(angle_text_p1, (10, 70))
+
+        # Draw power and angle bars for Player 2
+        power_value_p2 = max(min(player2.aimSpeed, power_range), 10)  # Ensure power value is within range
+        power_bar_length_p2 = int((power_value_p2 - 10) / power_range * 400)  # Calculate length of power bar
+        angle_bar_length_p2 = player2.aimAngle  # Angle bar length
+        pygame.draw.rect(game_layout_display, BLUE, (display_width - power_bar_length_p2 - 10, 10, power_bar_length_p2, 20))  # Power bar for Player 2
+        pygame.draw.rect(game_layout_display, RED, (display_width - angle_bar_length_p2 * 4 - 10, 40, angle_bar_length_p2 * 4, 20))  # Angle bar for Player 2
+        # Draw angle value for Player 2
+        angle_text_p2 = small_font.render(str(player2.aimAngle) + " degrees", True, BLACK)
+        game_layout_display.blit(angle_text_p2, (display_width - angle_bar_length_p2 * 4 - 10, 70))
         
         # Draw tanks and update/draw bullets
         player1.draw()
@@ -150,3 +176,5 @@ def game_loop():
 
 # Call the game loop
 game_loop()
+
+
