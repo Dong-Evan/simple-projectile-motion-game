@@ -5,6 +5,8 @@ import numpy as np
 from scipy.integrate import ode
 import bullet
 import tank
+import brick
+import random
 
 # set up the colors
 BLACK = (0, 0, 0)
@@ -49,14 +51,28 @@ class MyCircle(pygame.sprite.Sprite):
 def main():
     #a lot of this will have to be changed so that we have different bullets and can create them when we want to shoot
 
+    #game controls
+    print('--------------------------------')
+    print('Use A & D to move')
+    print('Use W & D to change shot power')
+    print('Use Q & E to change shot direction')
+    print('Press R to cycle through avaiable bullets')
+    print('Press Space to shoot')
+    print('Press P to pause and K to resume')
+    print('Press L to step forward in game when paused')
+    print('--------------------------------')
+
     # initializing pygame
     pygame.init()
 
     #set up window and game border
-    # top left corner is (0,0)
-    win_width = 640
-    win_height = 640
-    screen = pygame.display.set_mode((win_width, win_height))
+    #note: top left corner is (0,0), positive x is right (i.e. going right by 10 = (10, 0)), positive y is down (i.e. going down by 10 = (0, 10))
+        #important to keep in mind that increasing y means going down, especially when it comes to gravity stuff 
+        #there was some function from the labs that 'flipped' this, but I think it was messing with some things so I just removed it...
+    
+    windowWidth = 1000
+    windowHeight = 600
+    screen = pygame.display.set_mode((windowWidth, windowHeight))
     pygame.display.set_caption('Tank Game')
 
     #windSpeed = 0 #can represent this with two bars horizontally (only 1 bar will be filled; left bar meaens wind blowing left, same for right), or just use a number
@@ -76,32 +92,14 @@ def main():
     #create tank for p2
     tank2 = tank.Tank()
 
-    # shotBullet = bullet.Firework(RED, 10, 10) 
-
     tanks = [tank1, tank2]
+
+    
 
     #not sure how to add bullets right now (since they have to be created and deleted)
     #one option is to to create these sprites (circles) and then update their
         #position using the positions of the actual bullets, but that doesn't seem right...
     
-    #temporary code for drawing bullet ...
-    # shell = bullet.Shell(RED, 10, 10) 
-    # shell.setup(0.0, 400.0, 70.0, 25.0)
-
-    # sim = bullet.ReflectingBullet()
-
-    # sim.setup(0.0, 400.0, 70.0, 25.0, 3)  #will probably need to set up the position and velocity of the bullets differently
-
-    print('--------------------------------')
-    print('Use A & D to move')
-    print('Use W & D to change shot power')
-    print('Use Q & E to change shot direction')
-    print('Press R to cycle through avaiable bullets')
-    print('Press Space to shoot')
-    print('Press P to pause and K to resume')
-    print('Press L to step forward in game when paused')
-    print('--------------------------------')
-
     '''
     #main loop of the game (infinite loop while both tanks are alive)
         #basic rundown: 
@@ -183,18 +181,34 @@ def main():
             if keys[pygame.K_SPACE]:
                 print('shoot')
                 #shotBullet = currentTank.shoot() #this will simply remove the selected bullet from the tank's bullet list and return it
+                
+                #testing---
                 shotBullet = bullet.Firework(RED, 10, 10) 
-                shotBullet.setup(0.0, 400.0, 40.0, 45.0, 5) #setup should use the tank's aim power and angle (maybe have the setup in tank and return fully setup bullet from tank.shoot())
-                print(len(shotBullet.shells))
+                speed1 = random.randint(60, 70)
+                angle1 = random.randint(60, 70)
+                
+                shotBullet.setup(0.0, 500.0, 100, 45, 4) #setup should use the tank's aim power and angle (maybe have the setup in tank and return fully setup bullet from tank.shoot())
+
+                print(speed1, ", ", angle1)
+                # print(len(shotBullet.shells))
+                #----------
+
                 #while the bullet is still 'alive', only update the bullet and don't let anything else have control
-                while len(shotBullet.shells) > 0:
+                while shotBullet.isActive:
                     clock.tick(30)
                     screen.fill(WHITE)
                     #draw everything
 
                     shotBullet.step()
                     shotBullet.draw(screen)
-                    
+
+                    aRect = pygame.Rect(100, 500, 400, 10)
+                    aRect1 = pygame.Rect(100, 510, 400, 10)
+                    aRect2 = pygame.Rect(100, 520, 400, 10)
+                    pygame.draw.rect(screen, RED, aRect)
+                    pygame.draw.rect(screen, BLUE, aRect1)
+                    pygame.draw.rect(screen, GREEN, aRect2)
+
                     pygame.display.flip()
 
                 if control == 0:

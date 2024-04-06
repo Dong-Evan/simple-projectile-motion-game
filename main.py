@@ -6,7 +6,7 @@ import random
 pygame.init()
 
 # Screen dimensions
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Colors
@@ -18,7 +18,7 @@ BLUE = (0, 0, 255)
 COLORS = [RED, GREEN, BLUE, WHITE]  # List of colors for the bricks
 
 # Game elements
-BRICK_WIDTH, BRICK_HEIGHT = 10, 10
+BRICK_WIDTH, BRICK_HEIGHT = 20, 20
 PADDLE_WIDTH, PADDLE_HEIGHT = 100, 20
 BALL_RADIUS = 10
 NUM_ROWS = 20  # Number of rows of bricks
@@ -29,7 +29,7 @@ BRICK_PADDING = 0
 FPS = 60
 clock = pygame.time.Clock()
 
-class Brick:
+class Brick1:
     def __init__(self, x, y, color):
         self.rect = pygame.Rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
         self.color = color
@@ -88,7 +88,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     for i in range(50):
         col = random.randint(30, 40)
@@ -101,7 +101,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     for i in range(80):
         col = random.randint(50, 65)
@@ -114,7 +114,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     for i in range(80):
         col = random.randint(70, 80)
@@ -127,7 +127,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     for i in range(50):
         col = random.randint(0, NUM_COLS - 1)
@@ -140,7 +140,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     for i in range(150):
         col = random.randint(25, NUM_COLS - 25)
@@ -153,7 +153,7 @@ def create_bricks():
             x = col * BRICK_WIDTH 
             y = row * BRICK_HEIGHT
             color = RED  # Keeping a single color for simplicity, can be randomized
-            bricks.append(Brick(x, y, color))
+            bricks.append(Brick1(x, y, color))
 
     return bricks
 
