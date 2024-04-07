@@ -3,10 +3,12 @@
 import pygame, sys
 import numpy as np
 from scipy.integrate import ode
+import random
+
 import bullet
 import tank
 import brick
-import random
+
 
 # set up the colors
 BLACK = (0, 0, 0)
@@ -59,7 +61,6 @@ def main():
     print('Press R to cycle through avaiable bullets')
     print('Press Space to shoot')
     print('Press P to pause and K to resume')
-    print('Press L to step forward in game when paused')
     print('--------------------------------')
 
     # initializing pygame
@@ -73,6 +74,8 @@ def main():
     windowWidth = 1000
     windowHeight = 600
     screen = pygame.display.set_mode((windowWidth, windowHeight))
+    background = pygame.image.load('terrain.png')
+    background = pygame.transform.scale(background, (windowWidth, windowHeight))
     pygame.display.set_caption('Tank Game')
 
     #windSpeed = 0 #can represent this with two bars horizontally (only 1 bar will be filled; left bar meaens wind blowing left, same for right), or just use a number
@@ -88,13 +91,18 @@ def main():
     # spriteGroup = pygame.sprite.Group()
 
     #create tank for p1
-    tank1 = tank.Tank()
+    tank1 = tank.Tank(100, windowHeight - 100, 1, 40, 20, 5, GREEN)
     #create tank for p2
-    tank2 = tank.Tank()
+    tank2 = tank.Tank(windowWidth - 140, windowHeight - 100, -1, 40, 20, 5, BLUE)
 
     tanks = [tank1, tank2]
 
-    
+    #generate the bricks (obstacles) 
+    brickManager = brick.BrickManager()
+    bricks = brickManager.create_bricks(300, 20, 30, 10, 25)        #obstacle (divider in middle)
+    bricks.extend(brickManager.create_bricks(100, 0, 50, 0, 10))    #obstacles in sky
+
+    powerUp = brickManager.createPowerUp()
 
     #not sure how to add bullets right now (since they have to be created and deleted)
     #one option is to to create these sprites (circles) and then update their
@@ -115,24 +123,23 @@ def main():
             #check hp of tanks, if one is 0, other wins
             #draw everything (spriteGroup (tank, bullet), terrain, hp, aim trajectory arrow, numbers (power (and angle) of shot))
     '''
-
-    paused = True
+    #int control variable that determines who is currently in control (since we want turn based)
+        #start with letting p1 have control
+        #i.e. pressing keys will affect tank1
+    control = 0
+    paused = False
 
     while True:
         # 30 fps (this is from lab... not sure what to do with it)
         clock.tick(30)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit(0)
+        event = pygame.event.poll()
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit(0)
 
-        #int control variable that determines who is currently in control (since we want turn based)
-            #start with letting p1 have control
-            #i.e. pressing keys will affect tank1
-        control = 0
         currentTank = tanks[control] #get the tank corresponding to current control from list of tanks
-
+            
         #get key presses
         keys = pygame.key.get_pressed()
 
@@ -144,84 +151,109 @@ def main():
         
         #clear the background (to re-draw the sprites) 
         screen.fill(WHITE)
-
+        screen.blit(background, (0, 0))
+        
         if not paused:
 
             # #check for tank controls (need to implement these properly after tank class is done)
             if keys[pygame.K_a]:
-                print('left')
-                # currentTank.move(-1)
+                # print(control, 'left')
+                currentTank.move(-1)
             elif keys[pygame.K_d]:
-                print('right')
-                # currentTank.move(1)
+                # print(control, 'right')
+                currentTank.move(1)
 
             #controls for changing shot power of bullet(s) (could either pass a number to method or have no parameter and just have a fixed number in the method itself)
                 #*make sure power is between 10 to 100 (10 might be too high? definitely don't want 0)
             if keys[pygame.K_w]:
-                print('increase shot power')
-                #currentTank.increasePower(1)
+                # print(control, 'increase shot power')
+                currentTank.changePower(1)
             elif keys[pygame.K_s]:
-                print('decrease shot power')
-                #currentTank.decreasePower(1)
+                # print(control, 'decrease shot power')
+                currentTank.changePower(-1)
 
             #controls for aiming tank barrel / bullet (change 1 degree at a time?)
                 #*make sure angle is between 0 to 180 (the upper side of the tank)
             if keys[pygame.K_q]:
-                print('shift aim left')
-                #currentTank.shiftAimAngle(-1)
+                # print(control, 'shift aim left')
+                currentTank.shiftAimAngle(1)
             elif keys[pygame.K_e]:
-                print('shift aim right')
-                #currentTank.shiftAimAngle(1)
+                # print(control, 'shift aim right')
+                currentTank.shiftAimAngle(-1)
 
             #control for cycling bullet type 
-            if keys[pygame.K_r]:
-                print('cycle bullet')
-                #currentTank.nextBullet()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                # print(control, 'cycle bullet')
+                currentTank.nextBullet()
 
             if keys[pygame.K_SPACE]:
-                print('shoot')
-                #shotBullet = currentTank.shoot() #this will simply remove the selected bullet from the tank's bullet list and return it
-                
-                #testing---
-                shotBullet = bullet.Firework(RED, 10, 10) 
-                speed1 = random.randint(60, 70)
-                angle1 = random.randint(60, 70)
-                
-                shotBullet.setup(0.0, 500.0, 100, 45, 4) #setup should use the tank's aim power and angle (maybe have the setup in tank and return fully setup bullet from tank.shoot())
+                # print(control, 'shoot')
 
-                print(speed1, ", ", angle1)
-                # print(len(shotBullet.shells))
-                #----------
+                shotBullet = currentTank.shoot() #this will simply remove the selected bullet from the tank's bullet list and return it
 
                 #while the bullet is still 'alive', only update the bullet and don't let anything else have control
                 while shotBullet.isActive:
                     clock.tick(30)
+                    #clear everything and re-fill with background
                     screen.fill(WHITE)
-                    #draw everything
+                    screen.blit(background, (0, 0))
 
+                    #update bullet
                     shotBullet.step()
+
+                    #re-draw everything
+                    for drawTank in tanks:
+                        drawTank.draw(screen)
+                    for brick1 in bricks:
+                        brick1.draw(screen)
+                    if not powerUp == None:     
+                        powerUp.draw(screen)
                     shotBullet.draw(screen)
 
-                    aRect = pygame.Rect(100, 500, 400, 10)
-                    aRect1 = pygame.Rect(100, 510, 400, 10)
-                    aRect2 = pygame.Rect(100, 520, 400, 10)
-                    pygame.draw.rect(screen, RED, aRect)
-                    pygame.draw.rect(screen, BLUE, aRect1)
-                    pygame.draw.rect(screen, GREEN, aRect2)
+                    #check for collision
+                    for brick1 in bricks:
+                        if shotBullet.isCollide(brick1):
+                            bricks.remove(brick1)
+                    if not powerUp == None and shotBullet.isCollide(powerUp):
+                        #currentTank.addPowerUp() #simply generate a random bullet (powerUp) and add to the list of bullets
+                            #show powerup (text saying powerUp acquired)
+                            #make sure to 'draw' currentTank's current bullet to show what bullet is currently equiped 
+                        currentTank.addPowerUp()
+                        powerUp = None
+                    for tank1 in tanks:
+                        if not currentTank == tank1:
+                            if shotBullet.isCollide(tank1):
+                                print('hit')
+                                tank1.hp = tank1.hp - 25
+
+                                #check win condition
+                                if tank1.hp <= 0:
+                                    print('Game Over')
+                                    print('Player', control + 1, 'wins!')
+                                    pygame.quit()
+                                    sys.exit(0)
+                                shotBullet.step()
 
                     pygame.display.flip()
+                #end of bullet loop
 
-                if control == 0:
-                    control = 1 
-                else:
+                #next turn; swap controls
+                if control == len(tanks) - 1:
                     control = 0
+                    currentTank.fuel = 100
+                    powerUp = brickManager.createPowerUp()
+                else:
+                    control = control + 1
+                    currentTank.fuel = 100
+                    powerUp = brickManager.createPowerUp()
 
-            #display procedure (re-draw everything)
+     #display procedure (re-draw everything)
+        for drawTank in tanks:
+            drawTank.draw(screen)
+        for brick1 in bricks:
+            brick1.draw(screen)
+        powerUp.draw(screen)
 
-            # if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                # shell.step()
-
-        
         pygame.display.flip()
 
     # print("r: %10.2f" % sim.trace_x[-1])

@@ -1,6 +1,18 @@
 #used to store all the different bullet types... idk if this is efficient at all
 #definitely need to combine some of these types and just use different values instead of creating more child classes
 
+'''
+1 - Shell (normal bullet)
+2 - Pierce (Shell, but can break multiple bricks before breaking)
+3 - Bouncy (Shell, but bounces on impact)
+4 - Reflecting (shoots a bullet that goes in a straight line, reflecting off the surface when collided)
+5 - Firework (shoots a normal bullet which splits off into multiple bullets after a duration or when colliding)
+6 - Volley (shoots a bunch of normal bullets at once with some randomness in the shots)
+7 - Rapid (shoots a bunch of normal bullets in rapid sucession, each with slight randomness)
+'''
+
+
+
 import pygame, sys
 import numpy as np
 import random
@@ -17,8 +29,6 @@ BLUE = (0, 0, 255)
 windowWidth = 1000
 windowHeight = 600
 
-#TODO move display / sprite over here instead of in the 'sim' / 'environment'
-
 #create a superclass for the other ones to extend
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, color = RED, width = 5, height = 5):
@@ -28,13 +38,9 @@ class Bullet(pygame.sprite.Sprite):
         self.width = width
         self.height = height
 
-        # self.image = pygame.Surface([self.width, self.height])    #kind of like the background of the square
-        # self.rect = self.image.get_rect()               #get the rectangle representing the background
-        # self.image.fill(WHITE)                          #set background to white 
+        self.state = np.array([-10.0, -10.0, 0.0, 0.0])   #[0] = x position, [1] = y position, [2] = x velocity, [3] = y velocity 
 
-        self.rect = pygame.Rect(0, 0, self.width, self.height)
-
-        self.state = np.array([0.0, 0.0, 0.0, 0.0])   #[0] = x position, [1] = y position, [2] = x velocity, [3] = y velocity 
+        self.rect = pygame.Rect(self.state[0], self.state[1], self.width, self.height)
 
         self.initialSpeed = 10
         self.initialAngle = 45
@@ -73,7 +79,7 @@ class Bullet(pygame.sprite.Sprite):
         self.state[2] = self.initialSpeed * np.cos(self.initialAngle / 180.0 * np.pi)   #x velocity (convert angle_degrees to radians since np uses radians in calculation)
         self.state[3] = -self.initialSpeed * np.sin(self.initialAngle / 180.0 * np.pi)  #y velocity
 
-        self.trace_x = [self.state[0]]
+        self.trace_x = [self.state[0]]  #for graphing if we ever get to that
         self.trace_y = [self.state[1]]
 
     def f(self, t, state, friction, gravity):
@@ -100,68 +106,58 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = self.state[0], self.state[1]
 
         #collision detection + response will be implemented in the child classes (this class will simply 'update' the bullet' position)
-                    
-    #collision response code - just used to break the bullet  
-    #collision detection will be in the blocks ? idk how to efficiently detect if a bullet has collided with one of the blocks
-    def breakBullet(self): 
-        #check number of hits for the bullet, if less than 0, delete bullet 
-        #if greater than 0, subtract 1 from it
-        return
-    
+
+    def isCollide(self, anObject):
+        
+        if self.rect.colliderect(anObject.rect):
+            #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+            if anObject.objectType == 'power':
+                pass
+            else:
+                if self.pierce< 1:
+                    self.isActive = False
+                else:
+                    self.pierce = self.pierce - 1
+            return True
+            
     def printLocation(self):
         print(f"Bullet at ({self.x}, {self.y})")
 
     def draw(self, screen):
-
         pygame.draw.circle(screen, self.color, self.rect.center, 5)    #draw circle 
 
 class Shell(Bullet):
     def __init__(self, color = RED, width = 5, height = 5):
-        super().__init__(  color, width, height)
+        super().__init__(color, width, height)
     
     def step(self):
         super().step()
 
         #collision detection
-        #check for collision against border (keep projectile inside 'map')
-        if self.state[0] < 0 or self.state[0] > windowWidth-100:
+        #check for collision against border (remove if pass border)
+        if self.state[0] < 0 or self.state[0] > windowWidth:
             self.pierce = self.pierce - 1
-            self.state[2] = -self.state[2] - (self.state[2] * 0.01) #subtract a bit of speed from the bullet when it collides... not really needed at all
-        if self.state[1] < 0 or self.state[1] > windowHeight -100:
+        if self.state[1] < 0 or self.state[1] > windowHeight - 80:
             self.pierce = self.pierce - 1
-            self.state[3] = self.state[3] - (self.state[3] * 0.01)
-
         #reponse
         if self.pierce < 1:
             self.isActive = False
-
-#redundant class... just use Shell but with different number pierce 
-class PiercingShell(Bullet):
-    def __init__(self, color = RED, width = 5, height = 5):
-        super().__init__(self, color, width, height)
-        self.pierce = 3
-
-    def setup(self, x, y, initialSpeed, initialAngle, pierce):
-        super().setup(x, y, initialSpeed, initialAngle)
-        self.pierce = pierce
-    
-    def step(self):
-        super().step()
-
-
-class Bomb(Bullet): #creates an 'explosion' 
-                    #(simply has bigger collision 'response' where it checks in a radius around it)
-    def __init__(self, color = RED, width = 5, height = 5):
-        super().__init__(self, color = RED, width = 5, height = 5)
-        self.pierce = 3
-
-    def setup(self, x, y, initialSpeed, initialAngle, pierce):
-        super().setup(x, y, initialSpeed, initialAngle)
-        self.pierce = pierce
-
-    def step(self):
-        super().step()
-        #change collision response to 'break' blocks and hit tanks around point of collision
+        
+    def isCollide(self, anObject):
+        
+        if self.rect.colliderect(anObject.rect):
+            #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+            if anObject.objectType == 'power':
+                pass
+            else:
+                if self.pierce< 1:
+                    self.isActive = False
+                else:
+                    #subtract a bit of speed from the bullet when it collides... not really needed at all
+                    self.state[2] = self.state[2] - (self.state[2] * 0.01) 
+                    self.state[3] = self.state[3] - (self.state[3] * 0.01)
+                    self.pierce = self.pierce - 1
+            return True
 
 class BouncyBullet(Bullet): #will bounce on contact
     def __init__(self, color = RED, width = 5, height = 5):
@@ -174,19 +170,37 @@ class BouncyBullet(Bullet): #will bounce on contact
     def step(self):
         super().step()
 
+        #collision detection with window border
         #simply just reversing velocity when it hits a surface
         #proper response should be to calculate the colliding surface normal and use that to calculate the 'bounce' 
             #but that seems too complicated...
-        if self.state[0] < 0 or self.state[0] > windowWidth-100:
+        if self.state[0] < 0 or self.state[0] > windowWidth:
             self.pierce = self.pierce - 1
             self.state[2] = -self.state[2]
-        if self.state[1] < 0 or self.state[1] > windowHeight -100:
+        if self.state[1] < 0 or self.state[1] > windowHeight - 80:
             self.pierce = self.pierce - 1
             self.state[3] = -self.state[3] 
-
         #response
         if self.pierce < 1:
             self.isActive = False
+
+    #collision detection with bricks/tanks
+    def isCollide(self, anObject):
+        
+        if self.rect.colliderect(anObject.rect):
+            #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+            if anObject.objectType == 'power':
+                pass
+            else:
+                #collide with sides, flip x velocity
+                if self.rect.left < anObject.rect.left or self.rect.left > anObject.rect.left:
+                    self.pierce = self.pierce - 1
+                    self.state[2] = -self.state[2]
+                #collide with top/bottom, flip y velocity
+                elif self.rect.top < anObject.rect.top or self.rect.top > anObject.rect.top:
+                    self.pierce = self.pierce - 1
+                    self.state[3] = -self.state[3]
+            return True
 
 class ReflectingBullet(Bullet): #shoots straight and reflect ('bounce') on contact 
     def __init__(self, color = RED, width = 5, height = 5):
@@ -194,53 +208,47 @@ class ReflectingBullet(Bullet): #shoots straight and reflect ('bounce') on conta
         self.pierce = 3
 
     def setup(self, x, y, initialSpeed, initialAngle, pierce):
-        super().setup(x, y, 10, initialAngle)
-
-        self.pierce = pierce
+        super().setup(x, y, 10, initialAngle, pierce)
         
-        #this bullet simply has constant speed / velocity
-        self.state[2] = self.state[2] 
-        self.state[3] = self.state[3] 
+        #this bullet simply has constant speed / velocity until collision
 
     def step(self):
         self.cur_time = self.cur_time + self.dt
 
         self.state[0] = self.state[0] + self.state[2]
         self.state[1] = self.state[1] + self.state[3]
-        
+
+        self.rect.x, self.rect.y = self.state[0], self.state[1]
+
         #check for collision against border (keep projectile inside 'map')
         if self.state[0] < 0 or self.state[0] > windowWidth:
             self.state[2] = -self.state[2]
             self.pierce = self.pierce - 1
-        if self.state[1] < 0 or self.state[1] > windowHeight:
+        if self.state[1] < 0 or self.state[1] > windowHeight - 80:
             self.state[3] = -self.state[3]
             self.pierce = self.pierce - 1
-
-        #check for collision against blocks,
-            #check which side it collides?
-            #if hit bottom side of block (projectile going up) or hit top side of block (projectile going down) 
-                #reverse y velcoty 
-                #self.state[3] = -self.state[3]
-            #if hit side of block (projectile going left / right)
-                #reverse x velocity
-                # self.state[2] = -self.state[2]
                 
-        self.rect.x, self.rect.y = self.state[0], self.state[1]
-            
         if self.pierce < 1:
             self.isActive = False
-
-class FillingBullet(Bullet): #shoots a normal bullet, but fills the terrain with blocks... maybe too complicated?
-    def __init__(self, color = RED, width = 5, height = 5):
-        super().__init__(self, color, width, height)
-        self.pierce = 3
-
-    def setup(self, x, y, initialSpeed, initialAngle, pierce):
-        super().setup(x, y, initialSpeed, initialAngle)
-        self.pierce = pierce
-    
-    def step(self):
-        super().step()
+            
+    #check for collision against blocks
+    def isCollide(self, anObject):
+        if self.rect.colliderect(anObject.rect):
+            #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+            if anObject.objectType == 'power':
+                pass
+            else:
+                #collide with sides, flip x velocity
+                if self.rect.left < anObject.rect.left or self.rect.left > anObject.rect.left:
+                    self.pierce = self.pierce - 1
+                    print('side collision', self.pierce)
+                    self.state[2] = -self.state[2]
+                #collide with top/bottom, flip y velocity
+                elif self.rect.top < anObject.rect.top or self.rect.top > anObject.rect.top:
+                    self.pierce = self.pierce - 1
+                    print('top/bottom collision', self.pierce)
+                    self.state[3] = -self.state[3]
+            return True
 
 #used for the classes that have multiple bullets used... maybe this is redundant because I'm still creating individual classes for the actual multi-bullet classes
 class Bullets():    
@@ -273,12 +281,22 @@ class Bullets():
             shell.step()
             #if shell collides, 
                 #shell.breakBullet()
-            if shell.rect.centery > windowHeight or shell.rect.centery < 0 or shell.rect.centerx < 0 or shell.rect.centerx > windowWidth:
+            if shell.rect.centery > windowHeight - 80 or shell.rect.centery < 0 or shell.rect.centerx < 0 or shell.rect.centerx > windowWidth:
                 # print('remove')
                 self.breakBullet(shell)
 
         if len(self.shells) < 1 and self.projectiles <= 1:
             self.isActive = False
+
+    def isCollide(self, anObject):
+        for shell in self.shells:
+            if shell.rect.colliderect(anObject.rect):
+                #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+                if anObject.objectType == 'power':
+                    pass
+                else:
+                    self.breakBullet(shell)
+                return True
 
     #just removes one bullet, given it's position/index, from the array  
     def breakBullet(self, shell): 
@@ -293,31 +311,38 @@ class Bullets():
         for shell in self.shells:
             shell.draw(screen)
 
-class Firework(Bullets):
+class Firework(Bullets):    #shoots a normal shell which splits off into multiple shells after a delay
     def __init__(self, color = RED, width = 5, height = 5):
         super().__init__(color, width, height)
         self.splitTime = 5
          
     def setup(self, x, y, initialSpeed, initialAngle, projectiles):
         super().setup(x, y, initialSpeed, initialAngle, projectiles)
-        self.splitTime = (initialSpeed / 15) + (initialAngle / 20) + 1
+        self.splitTime = (initialSpeed / 20) + (initialAngle / 25) + 1
         print(self.splitTime)
 
     def step(self):
         #if firework projectile has been in air for a while, split projectile
-        #shells.remove(shell)
-        #for i in range(self.splits)
-            #shells.add(new Shell)
-
         super().step()
 
-        #if the initial projectile has been in the air for a while (3 seconds?) and there are splits left, remove initial shell and create new shells
+        #if the initial projectile has been in the air for a while and there are splits left, remove initial shell and create new shells
         if self.cur_time > self.splitTime and self.projectiles > 1:  
             # print(self.cur_time) 
             self.split()
 
-        #if collided before split, split early 
-
+    def isCollide(self, anObject):
+        for shell in self.shells:
+            if shell.rect.colliderect(anObject.rect):
+                #don't break bullet if it's powerup... just checking type of object (very bad, but i don't want to more complicated things...)
+                if anObject.objectType == 'power':
+                    pass
+                else:
+                    if self.projectiles > 1:
+                        self.split()
+                    else:
+                        self.breakBullet(shell)
+                return True
+            
     def split(self):
         projectiles = self.projectiles
                 
@@ -334,7 +359,7 @@ class Firework(Bullets):
 
         self.shells.pop(0)
 
-class Volley(Bullets):   #shoots a volley of bullets at once instead of just one
+class Volley(Bullets):  #shoots a volley of bullets at once instead of just one
     def __init__(self, color = RED, width = 5, height = 5):
         super().__init__(color, width, height)
         self.initialSpeed = 0
@@ -363,7 +388,7 @@ class Volley(Bullets):   #shoots a volley of bullets at once instead of just one
             newShell.setup(self.xPos, self.yPos, speed, angle, 1)
             self.shells.append(newShell)
 
-class Rapid(Bullets): #shoots a bunch of bullets in quick succession with a bit of randomess for each 
+class Rapid(Bullets):   #shoots a bunch of bullets in quick succession with a bit of randomess for each 
     def __init__(self, color = RED, width = 5, height = 5):
         super().__init__(color, width, height)        
         self.initialSpeed = 0
@@ -386,8 +411,48 @@ class Rapid(Bullets): #shoots a bunch of bullets in quick succession with a bit 
         if self.cur_time % 0.99 < 0.1 and self.projectiles > 1:
             self.projectiles = self.projectiles - 1
 
-            angle = random.randint(self.initialAngle - 30, self.initialAngle + 30)
+            angle = random.randint(self.initialAngle - 20, self.initialAngle + 20)
 
             newShell = Shell()
             newShell.setup(self.xPos, self.yPos, self.initialSpeed, angle, 1)
             self.shells.append(newShell)
+
+#unimplemented bullet types...
+
+
+class PiercingShell(Bullet):    #redundant class... just use Shell but with different number pierce 
+    def __init__(self, color = RED, width = 5, height = 5):
+        super().__init__(self, color, width, height)
+        self.pierce = 3
+
+    def setup(self, x, y, initialSpeed, initialAngle, pierce):
+        super().setup(x, y, initialSpeed, initialAngle)
+        self.pierce = pierce
+    
+    def step(self):
+        super().step()
+class Bomb(Bullet): #creates an 'explosion' 
+                    #(simply has bigger collision 'response' where it checks in a radius around it)
+    def __init__(self, color = RED, width = 5, height = 5):
+        super().__init__(self, color = RED, width = 5, height = 5)
+        self.pierce = 3
+
+    def setup(self, x, y, initialSpeed, initialAngle, pierce):
+        super().setup(x, y, initialSpeed, initialAngle)
+        self.pierce = pierce
+
+    def step(self):
+        super().step()
+        #change collision response to 'break' blocks and hit tanks around point of collision
+
+class FillingBullet(Bullet): #shoots a normal bullet, but fills the terrain with blocks... maybe too complicated?
+    def __init__(self, color = RED, width = 5, height = 5):
+        super().__init__(self, color, width, height)
+        self.pierce = 3
+
+    def setup(self, x, y, initialSpeed, initialAngle, pierce):
+        super().setup(x, y, initialSpeed, initialAngle)
+        self.pierce = pierce
+    
+    def step(self):
+        super().step()

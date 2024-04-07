@@ -33,7 +33,7 @@ FPS = 15
 
 # Fonts
 small_font = pygame.font.SysFont("comicsansms", 25)
-large_font = pygame.font.SysFont("comicsansms", 50)
+large_font = pygame.font.SysFont("comicsansms", 25)
 
 # Simplified Shell class
 class Shell:
@@ -78,7 +78,7 @@ class Tank:
             aimAngle = 180 - self.aimAngle
         else: 
             aimAngle = self.aimAngle
-        newBullet.setup(self.x + tnk_width // 2, self.y, self.aimSpeed, aimAngle)
+        newBullet.setup(self.x + tnk_width // 2, self.y, self.aimSpeed + 30, aimAngle, 1)
         self.bullets.append(newBullet)
 
     def draw(self):
@@ -98,49 +98,46 @@ class Tank:
     # Method to draw the health bar
     def draw_health_bar(self):
         if self.hp < 0: self.hp = 0
+
+        smaller_font = pygame.font.SysFont("comicsansms", 15)
+        health_bar_text = smaller_font.render("Health", True, BLACK)
+        game_layout_display.blit(health_bar_text, (self.x, self.y + tnk_height))
+
         BAR_LENGTH = 100  # Adjusted bar length for the display
         BAR_HEIGHT = 10
         fill = (self.hp / 100) * BAR_LENGTH
         # The y coordinate is now set to self.y + tnk_height (the bottom of the tank) + a small offset
-        outline_rect = pygame.Rect(self.x, self.y + tnk_height + 5, BAR_LENGTH, BAR_HEIGHT)
-        fill_rect = pygame.Rect(self.x, self.y + tnk_height + 5, fill, BAR_HEIGHT)
+        outline_rect = pygame.Rect(self.x, self.y + tnk_height + 20, BAR_LENGTH, BAR_HEIGHT)
+        fill_rect = pygame.Rect(self.x, self.y + tnk_height + 20, self.hp, BAR_HEIGHT)
         pygame.draw.rect(game_layout_display, RED, fill_rect)
-        pygame.draw.rect(game_layout_display, WHITE, outline_rect, 2)  # Draw outline
+        pygame.draw.rect(game_layout_display, BLACK, outline_rect, 2)  # Draw outline
 
     # Method to draw the power bar
     def draw_power_bar(self):
 
-        if self.fuel < 0: 
-            self.fuel = 0
-        
         # Constants for the power bar dimensions
         BAR_LENGTH = 100  # Adjusted bar length for the display
         BAR_HEIGHT = 10
         
-        
-        # Use aimSpeed to calculate the fill length of the power bar dynamically
-        power_range = 90  # Range of values for the speed
-        power_value = max(min(self.aimSpeed, power_range), 10)  # Ensure power value is within range
-        power_bar_length = int((power_value - 10) / power_range * BAR_LENGTH)  # Calculate length of power bar
-        
+        smaller_font = pygame.font.SysFont("comicsansms", 15)
+        power_bar_text = smaller_font.render("Power", True, BLACK)
+        game_layout_display.blit(power_bar_text, (self.x, self.y + tnk_height + BAR_HEIGHT + 16))
         
         # Drawing the power bar directly underneath the tank
-        outline_rect = pygame.Rect(self.x, self.y + tnk_height + BAR_HEIGHT + 10, BAR_LENGTH, BAR_HEIGHT)
-        fill_rect = pygame.Rect(self.x, self.y + tnk_height + BAR_HEIGHT + 10, power_bar_length, BAR_HEIGHT)
+        outline_rect = pygame.Rect(self.x, self.y + tnk_height + BAR_HEIGHT + 35, BAR_LENGTH, BAR_HEIGHT)
+        fill_rect = pygame.Rect(self.x, self.y + tnk_height + BAR_HEIGHT + 35, self.aimSpeed, BAR_HEIGHT)
         
         pygame.draw.rect(game_layout_display, BLUE, fill_rect)
-        pygame.draw.rect(game_layout_display, WHITE, outline_rect, 2) 
-        smaller_font = pygame.font.SysFont("comicsansms", 15)
-
-        power_bar_text = smaller_font.render("Power Bar", True, BLACK)
-        game_layout_display.blit(power_bar_text, (self.x + BAR_LENGTH + 2, self.y + tnk_height + BAR_HEIGHT + 10))
-        
+        pygame.draw.rect(game_layout_display, BLACK, outline_rect, 2)
  
     def draw_angle_text(self, font):
         BAR_HEIGHT = 10
-        angle_text = font.render(str(self.aimAngle) + "°", True, BLACK)
+
+        smaller_font = pygame.font.SysFont("comicsansms", 15)
+
+        angle_text = smaller_font.render("Angle: " + str(self.aimAngle) + "°", True, BLACK)
         # Positioning the angle text below the power bar
-        game_layout_display.blit(angle_text, (self.x, self.y + tnk_height + 2 * BAR_HEIGHT + 20))
+        game_layout_display.blit(angle_text, (self.x, self.y + tnk_height + 2 * BAR_HEIGHT + 32))
 
 def game_loop():
     player1 = Tank(100, display_height - 100, GREEN, 'right')
@@ -169,9 +166,11 @@ def game_loop():
                         player1.shoot()
                         player1_turn = False # Switch turn to Player 2
                     elif event.key == pygame.K_LEFTBRACKET: # Decrease speed
-                        player1.aimSpeed = max(player1.aimSpeed - 10, 10)
+                        player1.aimSpeed = max(player1.aimSpeed - 10, 0)
+                        print(player1.aimSpeed)
                     elif event.key == pygame.K_RIGHTBRACKET: # Increase speed
                         player1.aimSpeed = min(player1.aimSpeed + 10, 100)
+                        print(player1.aimSpeed)
             else:  # Player 2 controls
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:

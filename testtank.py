@@ -72,9 +72,15 @@ class Tank:
         speed_x = self.aimSpeed * np.cos(angle_rad) * self.aimDirection
         speed_y = -self.aimSpeed * np.sin(angle_rad)
         # Instantiate the Shell object with the correct parameters
-        newBullet = Shell(self.x + tnk_width // 2, self.y, speed_x, speed_y, self.color)
-        self.bullets.append(newBullet)
 
+        if self.aimDirection == -1:
+            aimAngle = 180 - self.aimAngle
+        else: 
+            aimAngle = self.aimAngle
+
+        newBullet = bullet.Shell()
+        newBullet.setup(self.x + tnk_width // 2, self.y, self.aimSpeed, aimAngle, 1)
+        self.bullets.append(newBullet)
 
     def draw(self):
         pygame.draw.rect(game_layout_display, self.color, (self.x, self.y, tnk_width, tnk_height))
